@@ -1,0 +1,56 @@
+name: Daily NEPSE EOD Scraper
+
+on:
+  schedule:
+    # Runs daily at 09:40 UTC, which is 3:25 PM NPT (UTC+5:45).
+    # This schedule is for Sunday to Thursday (0-4 in cron day-of-week: Sunday=0, Monday=1, ..., Thursday=4).
+    # This ensures it runs after market close on trading days.
+    - cron: '40 9 * * 0-4'
+
+  workflow_dispatch: # Allows you to manually trigger the workflow from GitHub UI
+
+jobs:
+  scrape_and_update:
+    runs-on: ubuntu-latest # Or windows-latest if you prefer
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9' # Use a stable Python version, e.g., 3.9, 3.10, 3.11
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # Install Playwright browser binaries
+        playwright install chromium # Your scraper uses Chromium
+
+    - name: Run NEPSE Scraper
+      # Execute the scraper.py script from the 'scripts' folder
+      run: |
+        python scripts/scraper.py
+      # Note: The scraper will create/update data/eod/nepse.csv and data/eod/nepse.duckdb
+
+    - name: Commit and Push changes (if any)
+      run: |
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+        git add data/eod/nepse.csv
+        git add data/eod/nepse.duckdb
+        # Use --allow-empty to ensure the step doesn't fail if no changes were made
+        # Use --no-verify to skip pre-commit hooks if any
+        git commit -m "Automated: Update NEPSE EOD data [skip ci]" --allow-empty --no-verify || echo "No changes to commit"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Automatically provided by GitHub Actions
+
+    - name: Upload Artifacts (optional, for debugging/downloading data)
+      uses: actions/upload-artifact@v4
+      with:
+        name: nepse-eod-data
+        path: data/eod/
+        retention-days: 7 # How long to keep the artifact
