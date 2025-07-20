@@ -2,10 +2,9 @@ name: Daily NEPSE EOD Scraper
 
 on:
   schedule:
-    # Runs daily at 09:40 UTC, which is 3:25 PM NPT (UTC+5:45).
-    # This schedule is for Sunday to Thursday (0-4 in cron day-of-week: Sunday=0, Monday=1, ..., Thursday=4).
-    # This ensures it runs after market close on trading days.
-    - cron: '40 9 * * 0-4'
+    # Runs daily at 09:45 UTC, which is 3:30 PM NPT (UTC+5:45).
+    # Sunday to Thursday (0-4).
+    - cron: '45 9 * * 0-4'
 
   workflow_dispatch: # Allows you to manually trigger the workflow from GitHub UI
 
